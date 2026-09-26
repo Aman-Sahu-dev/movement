@@ -1,0 +1,15 @@
+namespace movement {
+    MasterTable create_master_table(
+        string subject_name,
+        optional<string> subject_code,
+        optional<u32> expected_classes,
+        optional<u32> frequency_per_week
+    );
+};
+
+record MasterTable {
+    string subject_name;
+    optional<string> subject_code;
+    optional<u32> expected_classes;
+    optional<u32> frequency_per_week;
+};
