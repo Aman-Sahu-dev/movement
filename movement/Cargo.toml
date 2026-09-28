@@ -11,4 +11,5 @@ name = "movement_core"
 name = "uniffi-bindgen"
 path = "src/bin/uniffi-bindgen.rs"
 [dependencies]
+thiserror = "2.0.21"
 uniffi = { version = "0.32.1", features = ["cli"] }
