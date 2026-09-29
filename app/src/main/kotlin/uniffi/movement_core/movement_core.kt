@@ -672,7 +672,7 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
         uniffiCheckApiChecksums(this)
     }
-    external fun uniffi_movement_core_checksum_func_get_entries(
+    external fun uniffi_movement_core_checksum_func_build_master_record(
     ): Int
     external fun ffi_movement_core_uniffi_contract_version(
     ): Int
@@ -687,7 +687,7 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "movement_core"))
         
     }
-    external fun uniffi_movement_core_fn_func_get_entries(uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_movement_core_fn_func_build_master_record(`subjectName`: RustBuffer.ByValue,`subjectCode`: RustBuffer.ByValue,`expectedClasses`: RustBuffer.ByValue,`frequencyPerWeek`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_movement_core_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -808,7 +808,7 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if ((lib.uniffi_movement_core_checksum_func_get_entries() and 0xFFFF) != 51661) {
+    if ((lib.uniffi_movement_core_checksum_func_build_master_record() and 0xFFFF) != 37520) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -907,23 +907,23 @@ object NoHandle
 /**
  * @suppress
  */
-public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
-    override fun lift(value: Byte): Boolean {
-        return value.toInt() != 0
+public object FfiConverterUInt: FfiConverter<UInt, Int> {
+    override fun lift(value: Int): UInt {
+        return value.toUInt()
     }
 
-    override fun read(buf: ByteBuffer): Boolean {
-        return lift(buf.get())
+    override fun read(buf: ByteBuffer): UInt {
+        return lift(buf.getInt())
     }
 
-    override fun lower(value: Boolean): Byte {
-        return if (value) 1.toByte() else 0.toByte()
+    override fun lower(value: UInt): Int {
+        return value.toInt()
     }
 
-    override fun allocationSize(value: Boolean) = 1UL
+    override fun allocationSize(value: UInt) = 4UL
 
-    override fun write(value: Boolean, buf: ByteBuffer) {
-        buf.put(lower(value))
+    override fun write(value: UInt, buf: ByteBuffer) {
+        buf.putInt(value.toInt())
     }
 }
 
@@ -986,12 +986,14 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
 
 
 
-data class Entry (
-    var `name`: kotlin.String
+data class MasterRecord (
+    var `subjectName`: kotlin.String
     , 
-    var `date`: kotlin.String
+    var `subjectCode`: kotlin.String?
     , 
-    var `present`: kotlin.Boolean
+    var `expectedClasses`: kotlin.UInt?
+    , 
+    var `frequencyPerWeek`: kotlin.UInt?
     
 ){
     
@@ -1005,25 +1007,116 @@ data class Entry (
 /**
  * @suppress
  */
-public object FfiConverterTypeEntry: FfiConverterRustBuffer<Entry> {
-    override fun read(buf: ByteBuffer): Entry {
-        return Entry(
+public object FfiConverterTypeMasterRecord: FfiConverterRustBuffer<MasterRecord> {
+    override fun read(buf: ByteBuffer): MasterRecord {
+        return MasterRecord(
             FfiConverterString.read(buf),
-            FfiConverterString.read(buf),
-            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalUInt.read(buf),
+            FfiConverterOptionalUInt.read(buf),
         )
     }
 
-    override fun allocationSize(value: Entry) = (
-            FfiConverterString.allocationSize(value.`name`) +
-            FfiConverterString.allocationSize(value.`date`) +
-            FfiConverterBoolean.allocationSize(value.`present`)
+    override fun allocationSize(value: MasterRecord) = (
+            FfiConverterString.allocationSize(value.`subjectName`) +
+            FfiConverterOptionalString.allocationSize(value.`subjectCode`) +
+            FfiConverterOptionalUInt.allocationSize(value.`expectedClasses`) +
+            FfiConverterOptionalUInt.allocationSize(value.`frequencyPerWeek`)
     )
 
-    override fun write(value: Entry, buf: ByteBuffer) {
-            FfiConverterString.write(value.`name`, buf)
-            FfiConverterString.write(value.`date`, buf)
-            FfiConverterBoolean.write(value.`present`, buf)
+    override fun write(value: MasterRecord, buf: ByteBuffer) {
+            FfiConverterString.write(value.`subjectName`, buf)
+            FfiConverterOptionalString.write(value.`subjectCode`, buf)
+            FfiConverterOptionalUInt.write(value.`expectedClasses`, buf)
+            FfiConverterOptionalUInt.write(value.`frequencyPerWeek`, buf)
+    }
+}
+
+
+
+
+
+sealed class MasterException: kotlin.Exception() {
+    
+    class MissingName(
+        ) : MasterException() {
+        override val message
+            get() = ""
+    }
+    
+
+    
+
+
+    companion object ErrorHandler : UniffiRustCallStatusErrorHandler<MasterException> {
+        override fun lift(error_buf: RustBuffer.ByValue): MasterException = FfiConverterTypeMasterError.lift(error_buf)
+    }
+
+    
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeMasterError : FfiConverterRustBuffer<MasterException> {
+    override fun read(buf: ByteBuffer): MasterException {
+        
+
+        return when(buf.getInt()) {
+            1 -> MasterException.MissingName()
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: MasterException): ULong {
+        return when(value) {
+            is MasterException.MissingName -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+        }
+    }
+
+    override fun write(value: MasterException, buf: ByteBuffer) {
+        when(value) {
+            is MasterException.MissingName -> {
+                buf.putInt(1)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalUInt: FfiConverterRustBuffer<kotlin.UInt?> {
+    override fun read(buf: ByteBuffer): kotlin.UInt? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterUInt.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.UInt?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterUInt.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.UInt?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterUInt.write(value, buf)
+        }
     }
 }
 
@@ -1033,32 +1126,41 @@ public object FfiConverterTypeEntry: FfiConverterRustBuffer<Entry> {
 /**
  * @suppress
  */
-public object FfiConverterSequenceTypeEntry: FfiConverterRustBuffer<List<Entry>> {
-    override fun read(buf: ByteBuffer): List<Entry> {
-        val len = buf.getInt()
-        return List<Entry>(len) {
-            FfiConverterTypeEntry.read(buf)
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
         }
     }
 
-    override fun allocationSize(value: List<Entry>): ULong {
-        val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterTypeEntry.allocationSize(it) }.sum()
-        return sizeForLength + sizeForItems
-    }
-
-    override fun write(value: List<Entry>, buf: ByteBuffer) {
-        buf.putInt(value.size)
-        value.iterator().forEach {
-            FfiConverterTypeEntry.write(it, buf)
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
         }
     }
-} fun `getEntries`(): List<Entry> {
-            return FfiConverterSequenceTypeEntry.lift(
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_movement_core_fn_func_get_entries(
+}
+    @Throws(MasterException::class) fun `buildMasterRecord`(`subjectName`: kotlin.String, `subjectCode`: kotlin.String?, `expectedClasses`: kotlin.UInt?, `frequencyPerWeek`: kotlin.UInt?): MasterRecord {
+            return FfiConverterTypeMasterRecord.lift(
+    uniffiRustCallWithError(MasterException) { _status ->
+    UniffiLib.uniffi_movement_core_fn_func_build_master_record(
     
-        _status)
+        
+        FfiConverterString.lower(`subjectName`),
+        FfiConverterOptionalString.lower(`subjectCode`),
+        FfiConverterOptionalUInt.lower(`expectedClasses`),
+        FfiConverterOptionalUInt.lower(`frequencyPerWeek`),_status)
 }
     )
     }
