@@ -47,6 +47,8 @@ dependencies {
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
   androidTestImplementation(composeBom)
+  implementation("net.java.dev.jna:jna:5.14.0@aar")
+
 
   // Core Android dependencies
   implementation(libs.androidx.core.ktx)
