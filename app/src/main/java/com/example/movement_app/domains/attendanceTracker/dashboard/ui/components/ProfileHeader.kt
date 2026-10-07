@@ -1,4 +1,4 @@
-package com.example.movement_app.domains.attendanceTracker.ui
+package com.example.movement_app.domains.attendanceTracker.dashboard.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

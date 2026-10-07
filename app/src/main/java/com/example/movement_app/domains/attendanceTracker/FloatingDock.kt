@@ -1,4 +1,4 @@
-package com.example.movement_app.ui.components
+package com.example.movement_app.domains.attendanceTracker
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +19,11 @@ import androidx.compose.ui.unit.dp
 data class DockItem(
     val label: String,
     val icon: ImageVector,
-    val onClick: () -> Unit = {},   // does nothing for now
+    val onClick: () -> Unit = {},
 )
 
 @Composable
-fun FloatingDock(
+fun floatingDock(
     items: List<DockItem>,
     modifier: Modifier = Modifier,
 ) {

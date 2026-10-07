@@ -17,7 +17,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 homeScreen(
-                    // fake data for now; the real values will come from Rust/Room later
                     state = HomeUiState(name = "Immortal", age = 20, overallAttendance = 82.0f),
                     dockItems = defaultDockItems(),
                 )
